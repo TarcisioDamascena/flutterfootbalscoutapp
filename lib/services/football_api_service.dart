@@ -9,52 +9,29 @@ class FootballApiService {
     required int leagueId,
     required int season,
   }) async {
-    try {
-      final url = Uri.parse(
-        '${ApiConstants.apiFootballBaseUrl}${ApiConstants.teamsEndpoint}?league=$leagueId&season=$season',
-      );
+    final response = await _get(
+      '${ApiConstants.apiFootballBaseUrl}${ApiConstants.teamsEndpoint}?league=$leagueId&season=$season',
+    );
 
-      final response = await http.get(
-        url,
-        headers: ApiConstants.apiFootballHeaders,
-      );
+    final data = _decodeResponseBody(response, endpoint: 'teams');
+    final List<dynamic> teamsJson = data['response'] ?? [];
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List<dynamic> teamsJson = data['response'] ?? [];
-
-        return teamsJson.map((json) => Team.fromJson(json['team'])).toList();
-      } else {
-        throw Exception('Failed to load teams: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error fetching teams: $e');
-    }
+    return teamsJson.map((json) => Team.fromJson(json['team'])).toList();
   }
 
   Future<Team?> fetchTeamById(int teamId) async {
-    try {
-      final url = Uri.parse(
-        '${ApiConstants.apiFootballBaseUrl}${ApiConstants.teamsEndpoint}?id=$teamId',
-      );
+    final response = await _get(
+      '${ApiConstants.apiFootballBaseUrl}${ApiConstants.teamsEndpoint}?id=$teamId',
+    );
 
-      final response = await http.get(
-        url,
-        headers: ApiConstants.apiFootballHeaders,
-      );
+    final data = _decodeResponseBody(response, endpoint: 'team by id');
+    final List<dynamic> teamsJson = data['response'] ?? [];
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List<dynamic> teamsJson = data['response'] ?? [];
-
-        if (teamsJson.isNotEmpty) {
-          return Team.fromJson(teamsJson[0]['team']);
-        }
-      }
-      return null;
-    } catch (e) {
-      throw Exception('Error fetching team: $e');
+    if (teamsJson.isNotEmpty) {
+      return Team.fromJson(teamsJson[0]['team']);
     }
+
+    return null;
   }
 
   Future<List<Match>> fetchFixtures({
@@ -64,54 +41,29 @@ class FootballApiService {
     DateTime? from,
     DateTime? to,
   }) async {
-    try {
-      var url =
-          '${ApiConstants.apiFootballBaseUrl}${ApiConstants.fixturesEndpoint}?league=$leagueId&season=$season';
+    var url =
+        '${ApiConstants.apiFootballBaseUrl}${ApiConstants.fixturesEndpoint}?league=$leagueId&season=$season';
 
-      if (status != null) url += '&status=$status';
-      if (from != null) url += '&from=${from.toIso8601String().split('T')[0]}';
-      if (to != null) url += '&to=${to.toIso8601String().split('T')[0]}';
+    if (status != null) url += '&status=$status';
+    if (from != null) url += '&from=${from.toIso8601String().split('T')[0]}';
+    if (to != null) url += '&to=${to.toIso8601String().split('T')[0]}';
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: ApiConstants.apiFootballHeaders,
-      );
+    final response = await _get(url);
+    final data = _decodeResponseBody(response, endpoint: 'fixtures');
+    final List<dynamic> fixturesJson = data['response'] ?? [];
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List<dynamic> fixturesJson = data['response'] ?? [];
-
-        return fixturesJson.map((json) => Match.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to load fixtures: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error fetching fixtures: $e');
-    }
+    return fixturesJson.map((json) => Match.fromJson(json)).toList();
   }
 
   Future<List<Match>> fetchLiveMatches() async {
-    try {
-      final url = Uri.parse(
-        '${ApiConstants.apiFootballBaseUrl}${ApiConstants.fixturesEndpoint}?live=all',
-      );
+    final response = await _get(
+      '${ApiConstants.apiFootballBaseUrl}${ApiConstants.fixturesEndpoint}?live=all',
+    );
 
-      final response = await http.get(
-        url,
-        headers: ApiConstants.apiFootballHeaders,
-      );
+    final data = _decodeResponseBody(response, endpoint: 'live matches');
+    final List<dynamic> fixturesJson = data['response'] ?? [];
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List<dynamic> fixturesJson = data['response'] ?? [];
-
-        return fixturesJson.map((json) => Match.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to load live matches: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error fetching live matches: $e');
-    }
+    return fixturesJson.map((json) => Match.fromJson(json)).toList();
   }
 
   Future<List<Match>> fetchHeadToHead({
@@ -119,50 +71,31 @@ class FootballApiService {
     required int team2Id,
     int? last,
   }) async {
-    try {
-      var url =
-          '${ApiConstants.apiFootballBaseUrl}${ApiConstants.h2hEndpoint}?h2h=$team1Id-$team2Id';
+    var url =
+        '${ApiConstants.apiFootballBaseUrl}${ApiConstants.h2hEndpoint}?h2h=$team1Id-$team2Id';
 
-      if (last != null) url += '&last=$last';
+    if (last != null) url += '&last=$last';
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: ApiConstants.apiFootballHeaders,
-      );
+    final response = await _get(url);
+    final data = _decodeResponseBody(response, endpoint: 'head-to-head');
+    final List<dynamic> fixturesJson = data['response'] ?? [];
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List<dynamic> fixturesJson = data['response'] ?? [];
-
-        return fixturesJson.map((json) => Match.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to load H2H: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error fetching H2H: $e');
-    }
+    return fixturesJson.map((json) => Match.fromJson(json)).toList();
   }
 
   Future<Map<String, dynamic>> fetchMatchStatistics(int fixtureId) async {
-    try {
-      final url = Uri.parse(
-        '${ApiConstants.apiFootballBaseUrl}${ApiConstants.statisticsEndpoint}?fixture=$fixtureId',
-      );
+    final response = await _get(
+      '${ApiConstants.apiFootballBaseUrl}${ApiConstants.statisticsEndpoint}?fixture=$fixtureId',
+    );
 
-      final response = await http.get(
-        url,
-        headers: ApiConstants.apiFootballHeaders,
-      );
+    final data = _decodeResponseBody(response, endpoint: 'match statistics');
+    final responseList = data['response'];
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['response'] ?? {};
-      } else {
-        throw Exception('Failed to load statistics: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error fetching statistics: $e');
+    if (responseList is List && responseList.isNotEmpty) {
+      return responseList.first as Map<String, dynamic>;
     }
+
+    return {};
   }
 
   Future<List<Match>> fetchTeamMatches({
@@ -170,27 +103,61 @@ class FootballApiService {
     required int season,
     int? last,
   }) async {
-    try {
-      var url =
-          '${ApiConstants.apiFootballBaseUrl}${ApiConstants.fixturesEndpoint}?team=$teamId&season=$season';
+    var url =
+        '${ApiConstants.apiFootballBaseUrl}${ApiConstants.fixturesEndpoint}?team=$teamId&season=$season';
 
-      if (last != null) url += '&last=$last';
+    if (last != null) url += '&last=$last';
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: ApiConstants.apiFootballHeaders,
+    final response = await _get(url);
+    final data = _decodeResponseBody(response, endpoint: 'team matches');
+    final List<dynamic> fixturesJson = data['response'] ?? [];
+
+    return fixturesJson.map((json) => Match.fromJson(json)).toList();
+  }
+
+  Future<http.Response> _get(String url) async {
+    final uri = Uri.parse(url);
+
+    final primaryResponse = await http.get(
+      uri,
+      headers: ApiConstants.apiFootballHeaders,
+    );
+
+    if (primaryResponse.statusCode == 401 || primaryResponse.statusCode == 403) {
+      final fallbackResponse = await http.get(
+        uri,
+        headers: ApiConstants.apiFootballRapidApiHeaders,
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List<dynamic> fixturesJson = data['response'] ?? [];
-
-        return fixturesJson.map((json) => Match.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to load team matches: ${response.statusCode}');
+      if (fallbackResponse.statusCode < 400) {
+        return fallbackResponse;
       }
-    } catch (e) {
-      throw Exception('Error fetching team matches: $e');
     }
+
+    return primaryResponse;
+  }
+
+  Map<String, dynamic> _decodeResponseBody(
+    http.Response response, {
+    required String endpoint,
+  }) {
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to load $endpoint: ${response.statusCode} ${response.reasonPhrase ?? ''}',
+      );
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final errors = data['errors'];
+
+    if (errors is List && errors.isNotEmpty) {
+      throw Exception('API error loading $endpoint: ${errors.join(', ')}');
+    }
+
+    if (errors is Map && errors.isNotEmpty) {
+      throw Exception('API error loading $endpoint: ${errors.values.join(', ')}');
+    }
+
+    return data;
   }
 }

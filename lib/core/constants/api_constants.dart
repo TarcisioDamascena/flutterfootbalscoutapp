@@ -23,7 +23,13 @@ class ApiConstants {
   static const String oddsApiKey = '708857d249f407668cc34532a73f5f3a';
 
   // Request headers
+  // API-SPORTS direct host uses `x-apisports-key`.
   static Map<String, String> get apiFootballHeaders => {
+    'x-apisports-key': apiFootballKey,
+  };
+
+  // Optional fallback headers for RapidAPI-proxied access.
+  static Map<String, String> get apiFootballRapidApiHeaders => {
     'x-rapidapi-key': apiFootballKey,
     'x-rapidapi-host': 'v3.football.api-sports.io',
   };
