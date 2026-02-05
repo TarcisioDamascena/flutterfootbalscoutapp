@@ -19,7 +19,7 @@ class ApiConstants {
 
   // Request Headers
   static Map<String, String> get apiFootballHeaders => {
-    'x-rapidapo-key': apiFootballKey,
+    'x-rapidapi-key': apiFootballKey,
     'x-apisports-host': 'v3.football.api-sports.io',
   };
 
