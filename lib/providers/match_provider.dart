@@ -30,7 +30,7 @@ class MatchProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _matches = await _apiService.fetchFixtures(
+      _matches = await _fetchFixturesWithSeasonFallback(
         leagueId: leagueId,
         season: season,
         status: status,
@@ -50,6 +50,39 @@ class MatchProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<List<Match>> _fetchFixturesWithSeasonFallback({
+    required int leagueId,
+    required int season,
+    String? status,
+    DateTime? from,
+    DateTime? to,
+  }) async {
+    final currentYear = DateTime.now().year;
+    final candidateSeasons = <int>{
+      season,
+      currentYear,
+      currentYear - 1,
+      season + 1,
+      season - 1,
+    }.where((year) => year > 0);
+
+    for (final candidateSeason in candidateSeasons) {
+      final fixtures = await _apiService.fetchFixtures(
+        leagueId: leagueId,
+        season: candidateSeason,
+        status: status,
+        from: from,
+        to: to,
+      );
+
+      if (fixtures.isNotEmpty) {
+        return fixtures;
+      }
+    }
+
+    return [];
   }
 
   Future<void> fetchLiveMatches() async {
