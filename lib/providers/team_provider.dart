@@ -68,25 +68,15 @@ class TeamProvider extends ChangeNotifier {
       season - 1,
     }.where((year) => year > 0);
 
-    Object? lastError;
-
     for (final candidateSeason in candidateSeasons) {
-      try {
-        final teams = await _apiService.fetchTeams(
-          leagueId: leagueId,
-          season: candidateSeason,
-        );
+      final teams = await _apiService.fetchTeams(
+        leagueId: leagueId,
+        season: candidateSeason,
+      );
 
-        if (teams.isNotEmpty) {
-          return MapEntry(candidateSeason, teams);
-        }
-      } catch (e) {
-        lastError = e;
+      if (teams.isNotEmpty) {
+        return MapEntry(candidateSeason, teams);
       }
-    }
-
-    if (lastError != null) {
-      throw Exception(lastError.toString());
     }
 
     return const MapEntry(null, <Team>[]);
