@@ -12,11 +12,13 @@ class MatchProvider extends ChangeNotifier {
   List<Match> _liveMatches = [];
   bool _isLoading = false;
   String? _error;
+  int? _activeSeason;
 
   List<Match> get matches => _matches;
   List<Match> get liveMatches => _liveMatches;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  int? get activeSeason => _activeSeason;
 
   Future<void> fetchFixtures({
     required int leagueId,
@@ -30,13 +32,16 @@ class MatchProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _matches = await _apiService.fetchFixtures(
+      final fixtureResult = await _fetchFixturesWithSeasonFallback(
         leagueId: leagueId,
         season: season,
         status: status,
         from: from,
         to: to,
       );
+
+      _activeSeason = fixtureResult.key;
+      _matches = fixtureResult.value;
 
       // Save to database
       for (var match in _matches) {
@@ -45,11 +50,55 @@ class MatchProvider extends ChangeNotifier {
 
       _error = null;
     } catch (e) {
+      _activeSeason = null;
       _error = e.toString();
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<MapEntry<int?, List<Match>>> _fetchFixturesWithSeasonFallback({
+    required int leagueId,
+    required int season,
+    String? status,
+    DateTime? from,
+    DateTime? to,
+  }) async {
+    final currentYear = DateTime.now().year;
+    final candidateSeasons = <int>{
+      season,
+      currentYear,
+      currentYear - 1,
+      season + 1,
+      season - 1,
+    }.where((year) => year > 0);
+
+    Object? lastError;
+
+    for (final candidateSeason in candidateSeasons) {
+      try {
+        final fixtures = await _apiService.fetchFixtures(
+          leagueId: leagueId,
+          season: candidateSeason,
+          status: status,
+          from: from,
+          to: to,
+        );
+
+        if (fixtures.isNotEmpty) {
+          return MapEntry(candidateSeason, fixtures);
+        }
+      } catch (e) {
+        lastError = e;
+      }
+    }
+
+    if (lastError != null) {
+      throw Exception(lastError.toString());
+    }
+
+    return const MapEntry(null, <Match>[]);
   }
 
   Future<void> fetchLiveMatches() async {
