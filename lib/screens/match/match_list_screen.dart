@@ -94,6 +94,47 @@ class _MatchListScreenState extends State<MatchListScreen> {
             );
           }
 
+          final displayedSeason = provider.activeSeason ?? _selectedSeason;
+
+          if (provider.matches.isNotEmpty && displayedSeason != _selectedSeason) {
+            return Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  color: Colors.amber.shade100,
+                  child: Text(
+                    'Showing $_selectedLeague season $displayedSeason (requested $_selectedSeason had no fixtures)',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _loadMatches,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(AppConstants.defaultPadding),
+                      itemCount: provider.matches.length,
+                      itemBuilder: (context, index) {
+                        final match = provider.matches[index];
+                        return MatchCard(
+                          match: match,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MatchDetailScreen(match: match),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+
           if (provider.matches.isEmpty) {
             return Center(
               child: Column(

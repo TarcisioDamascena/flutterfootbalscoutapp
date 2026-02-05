@@ -12,11 +12,13 @@ class TeamProvider extends ChangeNotifier {
   List<int> _favoriteTeamIds = [];
   bool _isLoading = false;
   String? _error;
+  int? _activeSeason;
 
   List<Team> get teams => _teams;
   List<int> get favoriteTeamIds => _favoriteTeamIds;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  int? get activeSeason => _activeSeason;
 
   List<Team> get favoriteTeams {
     return _teams.where((team) => _favoriteTeamIds.contains(team.id)).toList();
@@ -28,7 +30,10 @@ class TeamProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _teams = await _apiService.fetchTeams(leagueId: leagueId, season: season);
+      await _resolveTeamsForBestSeason(
+        leagueId: leagueId,
+        season: season,
+      );
 
       // Save to database
       for (var team in _teams) {
@@ -37,13 +42,64 @@ class TeamProvider extends ChangeNotifier {
 
       _error = null;
     } catch (e) {
+      _activeSeason = null;
       _error = e.toString();
-      // Try to load from database if API fails
-      _teams = await _dbService.getAllTeams();
+      // Keep league-specific results only to avoid showing stale teams from other leagues
+      _teams = [];
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> _resolveTeamsForBestSeason({
+    required int leagueId,
+    required int season,
+  }) async {
+    final resolved = await _fetchTeamsWithSeasonFallback(
+      leagueId: leagueId,
+      season: season,
+    );
+
+    _activeSeason = resolved.key;
+    _teams = resolved.value;
+  }
+
+  Future<MapEntry<int?, List<Team>>> _fetchTeamsWithSeasonFallback({
+    required int leagueId,
+    required int season,
+  }) async {
+    final currentYear = DateTime.now().year;
+    final candidateSeasons = <int>{
+      season,
+      currentYear,
+      currentYear - 1,
+      season + 1,
+      season - 1,
+    }.where((year) => year > 0);
+
+    Object? lastError;
+
+    for (final candidateSeason in candidateSeasons) {
+      try {
+        final teams = await _apiService.fetchTeams(
+          leagueId: leagueId,
+          season: candidateSeason,
+        );
+
+        if (teams.isNotEmpty) {
+          return MapEntry(candidateSeason, teams);
+        }
+      } catch (e) {
+        lastError = e;
+      }
+    }
+
+    if (lastError != null) {
+      throw Exception(lastError.toString());
+    }
+
+    return const MapEntry(null, <Team>[]);
   }
 
   Future<Team?> fetchTeamById(int teamId) async {
