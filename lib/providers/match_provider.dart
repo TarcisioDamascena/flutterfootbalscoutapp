@@ -12,11 +12,13 @@ class MatchProvider extends ChangeNotifier {
   List<Match> _liveMatches = [];
   bool _isLoading = false;
   String? _error;
+  int? _activeSeason;
 
   List<Match> get matches => _matches;
   List<Match> get liveMatches => _liveMatches;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  int? get activeSeason => _activeSeason;
 
   Future<void> fetchFixtures({
     required int leagueId,
@@ -38,6 +40,9 @@ class MatchProvider extends ChangeNotifier {
         to: to,
       );
 
+      _activeSeason = fixtureResult.key;
+      _matches = fixtureResult.value;
+
       // Save to database
       for (var match in _matches) {
         await _dbService.insertMatch(match);
@@ -45,6 +50,7 @@ class MatchProvider extends ChangeNotifier {
 
       _error = null;
     } catch (e) {
+      _activeSeason = null;
       _error = e.toString();
     } finally {
       _isLoading = false;

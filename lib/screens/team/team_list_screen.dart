@@ -100,6 +100,8 @@ class _TeamListScreenState extends State<TeamListScreen> {
             );
           }
 
+          final displayedSeason = provider.activeSeason ?? _selectedSeason;
+
           final filteredTeams = _searchQuery.isEmpty
               ? provider.teams
               : provider.teams
@@ -107,6 +109,49 @@ class _TeamListScreenState extends State<TeamListScreen> {
                       (team) => team.name.toLowerCase().contains(_searchQuery),
                     )
                     .toList();
+
+          if (filteredTeams.isNotEmpty && displayedSeason != _selectedSeason) {
+            return Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  color: Colors.amber.shade100,
+                  child: Text(
+                    'Showing $_selectedLeague teams for season $displayedSeason (requested $_selectedSeason had no teams)',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _loadTeams,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(AppConstants.defaultPadding),
+                      itemCount: filteredTeams.length,
+                      itemBuilder: (context, index) {
+                        final team = filteredTeams[index];
+                        return TeamCard(
+                          team: team,
+                          isFavorite: provider.isFavorite(team.id),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => TeamDetailScreen(team: team),
+                              ),
+                            );
+                          },
+                          onFavoriteToggle: () {
+                            provider.toggleFavorite(team.id);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
 
           if (filteredTeams.isEmpty) {
             return const Center(child: Text('No teams found'));
