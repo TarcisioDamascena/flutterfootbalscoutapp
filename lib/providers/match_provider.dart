@@ -32,7 +32,7 @@ class MatchProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final fixtureResult = await _fetchFixturesWithSeasonFallback(
+      _matches = await _fetchFixturesWithSeasonFallback(
         leagueId: leagueId,
         season: season,
         status: status,
@@ -58,7 +58,7 @@ class MatchProvider extends ChangeNotifier {
     }
   }
 
-  Future<MapEntry<int?, List<Match>>> _fetchFixturesWithSeasonFallback({
+  Future<List<Match>> _fetchFixturesWithSeasonFallback({
     required int leagueId,
     required int season,
     String? status,
@@ -84,11 +84,11 @@ class MatchProvider extends ChangeNotifier {
       );
 
       if (fixtures.isNotEmpty) {
-        return MapEntry(candidateSeason, fixtures);
+        return fixtures;
       }
     }
 
-    return const MapEntry(null, <Match>[]);
+    return [];
   }
 
   Future<void> fetchLiveMatches() async {
