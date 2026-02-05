@@ -40,6 +40,9 @@ class MatchProvider extends ChangeNotifier {
         to: to,
       );
 
+      _activeSeason = fixtureResult.key;
+      _matches = fixtureResult.value;
+
       // Save to database
       for (var match in _matches) {
         await _dbService.insertMatch(match);
