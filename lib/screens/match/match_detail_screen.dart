@@ -5,6 +5,7 @@ import '../../models/match.dart';
 import '../../models/odds.dart';
 import '../../providers/match_provider.dart';
 import '../../providers/odds_provider.dart';
+import '../../core/constants/app_constants.dart';
 
 class MatchDetailScreen extends StatefulWidget {
   final Match match;
@@ -32,12 +33,12 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     final matchProvider = context.read<MatchProvider>();
     final homeMatches = await matchProvider.fetchTeamMatches(
       teamId: widget.match.homeTeam.id,
-      season: 2024,
+      season: AppConstants.currentSeason,
       last: 5,
     );
     final awayMatches = await matchProvider.fetchTeamMatches(
       teamId: widget.match.awayTeam.id,
-      season: 2024,
+      season: AppConstants.currentSeason,
       last: 5,
     );
 

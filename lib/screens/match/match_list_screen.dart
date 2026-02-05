@@ -14,7 +14,7 @@ class MatchListScreen extends StatefulWidget {
 
 class _MatchListScreenState extends State<MatchListScreen> {
   String _selectedLeague = AppConstants.defaultLeague;
-  int _selectedSeason = AppConstants.defaultSeason;
+  int _selectedSeason = AppConstants.currentSeason;
 
   @override
   void initState() {

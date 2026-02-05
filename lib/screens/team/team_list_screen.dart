@@ -14,7 +14,7 @@ class TeamListScreen extends StatefulWidget {
 
 class _TeamListScreenState extends State<TeamListScreen> {
   String _selectedLeague = AppConstants.defaultLeague;
-  int _selectedSeason = AppConstants.defaultSeason;
+  int _selectedSeason = AppConstants.currentSeason;
   String _searchQuery = '';
 
   @override

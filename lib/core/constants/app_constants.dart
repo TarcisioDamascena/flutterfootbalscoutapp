@@ -28,7 +28,13 @@ class AppConstants {
 
   // Default Settings
   static const String defaultLeague = 'Premier League';
-  static const int defaultSeason = 2024;
+  static int get currentSeason {
+    final now = DateTime.now();
+    // Most major leagues run across years and are identified by start year.
+    return now.month >= 7 ? now.year : now.year - 1;
+  }
+
+  static int get defaultSeason => currentSeason;
 
   // UI Constants
   static const double defaultPadding = 16.0;

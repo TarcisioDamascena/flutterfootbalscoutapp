@@ -3,10 +3,12 @@ import '../models/odds.dart';
 import '../models/match.dart';
 import '../services/odds_service.dart';
 import '../services/database_service.dart';
+import '../services/football_api_service.dart';
 import '../core/services/service_locator.dart';
 
 class OddsProvider extends ChangeNotifier {
   final OddsService _oddsService = getIt<OddsService>();
+  final FootballApiService _footballApiService = getIt<FootballApiService>();
   final DatabaseService _dbService = getIt<DatabaseService>();
 
   Map<int, Odds> _oddsCache = {};
@@ -40,15 +42,19 @@ class OddsProvider extends ChangeNotifier {
         return existingOdds;
       }
 
-      // Calculate new odds
-      final odds = await _oddsService.calculateOdds(
-        matchId: match.id,
-        homeTeamId: match.homeTeam.id,
-        awayTeamId: match.awayTeam.id,
-        homeTeamRecentMatches: homeTeamRecentMatches,
-        awayTeamRecentMatches: awayTeamRecentMatches,
-        headToHeadMatches: headToHeadMatches,
-      );
+      // Try external odds API first
+      final apiOdds = await _footballApiService.fetchMatchOdds(fixtureId: match.id);
+
+      // Fallback to local calculation if external API odds are unavailable
+      final odds = apiOdds ??
+          await _oddsService.calculateOdds(
+            matchId: match.id,
+            homeTeamId: match.homeTeam.id,
+            awayTeamId: match.awayTeam.id,
+            homeTeamRecentMatches: homeTeamRecentMatches,
+            awayTeamRecentMatches: awayTeamRecentMatches,
+            headToHeadMatches: headToHeadMatches,
+          );
 
       // Save to database
       await _dbService.insertOdds(odds);

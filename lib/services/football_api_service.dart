@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../core/constants/api_constants.dart';
 import '../models/team.dart';
 import '../models/match.dart';
+import '../models/odds.dart';
 
 class FootballApiService {
   Future<List<Team>> fetchTeams({
@@ -193,4 +194,83 @@ class FootballApiService {
       throw Exception('Error fetching team matches: $e');
     }
   }
+
+  Future<Odds?> fetchMatchOdds({required int fixtureId}) async {
+    try {
+      final url = Uri.parse(
+        '${ApiConstants.apiFootballBaseUrl}${ApiConstants.oddsEndpoint}?fixture=$fixtureId',
+      );
+
+      final response = await http.get(
+        url,
+        headers: ApiConstants.apiFootballHeaders,
+      );
+
+      if (response.statusCode != 200) {
+        return null;
+      }
+
+      final data = jsonDecode(response.body);
+      final List<dynamic> oddsResponse = data['response'] ?? [];
+      if (oddsResponse.isEmpty) return null;
+
+      for (final fixtureOdds in oddsResponse) {
+        final List<dynamic> bookmakers = fixtureOdds['bookmakers'] ?? [];
+        for (final bookmaker in bookmakers) {
+          final List<dynamic> bets = bookmaker['bets'] ?? [];
+          for (final bet in bets) {
+            final String betName = (bet['name'] ?? '').toString().toLowerCase();
+            if (betName != 'match winner') continue;
+
+            final List<dynamic> values = bet['values'] ?? [];
+            double? homeWinOdds;
+            double? drawOdds;
+            double? awayWinOdds;
+
+            for (final value in values) {
+              final outcome = (value['value'] ?? '').toString().toLowerCase();
+              final odd = double.tryParse((value['odd'] ?? '').toString());
+              if (odd == null) continue;
+
+              if (outcome == 'home') {
+                homeWinOdds = odd;
+              } else if (outcome == 'draw') {
+                drawOdds = odd;
+              } else if (outcome == 'away') {
+                awayWinOdds = odd;
+              }
+            }
+
+            if (homeWinOdds != null && drawOdds != null && awayWinOdds != null) {
+              final homeProb = _oddsToProbability(homeWinOdds);
+              final drawProb = _oddsToProbability(drawOdds);
+              final awayProb = _oddsToProbability(awayWinOdds);
+
+              return Odds(
+                matchId: fixtureId,
+                homeWinOdds: homeWinOdds,
+                drawOdds: drawOdds,
+                awayWinOdds: awayWinOdds,
+                homeWinProbability: homeProb,
+                drawProbability: drawProb,
+                awayWinProbability: awayProb,
+                source: 'api',
+                lastUpdated: DateTime.now(),
+              );
+            }
+          }
+        }
+      }
+
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  double _oddsToProbability(double odd) {
+    if (odd <= 0) return 0;
+    return (1 / odd) * 100;
+  }
+
 }
