@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../../providers/match_provider.dart';
 import '../../core/constants/app_constants.dart';
 import '../../widgets/match_card.dart';
