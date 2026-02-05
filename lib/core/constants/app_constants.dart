@@ -28,7 +28,7 @@ class AppConstants {
 
   // Default Settings
   static const String defaultLeague = 'Premier League';
-  static const int defaultSeason = 2024;
+  static const int defaultSeason = 2025;
 
   // UI Constants
   static const double defaultPadding = 16.0;
