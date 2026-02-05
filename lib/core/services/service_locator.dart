@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../services/database_service.dart';
@@ -12,5 +13,9 @@ Future<void> setupServiceLocator() async {
   getIt.registerLazySingleton<OddsService>(() => OddsService());
 
   // Initialize database
-  await getIt<DatabaseService>().initDatabase();
+  try {
+    await getIt<DatabaseService>().initDatabase();
+  } catch (e) {
+    debugPrint('database initialization skipped: $e');
+  }
 }
