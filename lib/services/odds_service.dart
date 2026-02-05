@@ -1,7 +1,49 @@
 import '../models/match.dart';
 import '../models/odds.dart';
+import 'odds_api_service.dart';
 
 class OddsService {
+  final OddsApiService _oddsApiService = OddsApiService();
+
+  /// Get odds with automatic fallback system:
+  /// 1. Try The Odds API first
+  /// 2. If fails, calculate custom odds
+  Future<Odds> getOddsWithFallback({
+    required int matchId,
+    required Match match,
+    List<Match>? homeTeamRecentMatches,
+    List<Match>? awayTeamRecentMatches,
+    List<Match>? headToHeadMatches,
+  }) async {
+    // Try to get odds from The Odds API first
+    try {
+      final apiOdds = await _oddsApiService.fetchOddsFromApi(
+        matchId: matchId,
+        homeTeam: match.homeTeam.name,
+        awayTeam: match.awayTeam.name,
+        leagueName: match.leagueName,
+      );
+
+      if (apiOdds != null) {
+        print('✅ Using odds from The Odds API');
+        return apiOdds;
+      }
+    } catch (e) {
+      print('⚠️ The Odds API failed: $e');
+      print('📊 Falling back to custom calculation...');
+    }
+
+    // Fallback to custom calculation
+    return await calculateOdds(
+      matchId: matchId,
+      homeTeamId: match.homeTeam.id,
+      awayTeamId: match.awayTeam.id,
+      homeTeamRecentMatches: homeTeamRecentMatches,
+      awayTeamRecentMatches: awayTeamRecentMatches,
+      headToHeadMatches: headToHeadMatches,
+    );
+  }
+
   /// Calculate odds based on historical data and team statistics
   /// This is a simplified algorithm - you can enhance it with more factors
   Future<Odds> calculateOdds({
@@ -176,6 +218,11 @@ class OddsService {
     return odds.clamp(1.01, 50.0);
   }
 
+  /// Check API quota for The Odds API
+  Future<Map<String, dynamic>?> checkApiQuota() async {
+    return await _oddsApiService.getApiQuota();
+  }
+
   /// Enhanced odds calculation with more factors
   Future<Odds> calculateAdvancedOdds({
     required int matchId,
@@ -189,6 +236,7 @@ class OddsService {
     bool? homeTeamHomeRecord,
     bool? awayTeamAwayRecord,
   }) async {
+    // Future enhancement: incorporate league positions and home/away records
     return await calculateOdds(
       matchId: matchId,
       homeTeamId: homeTeamId,

@@ -31,20 +31,19 @@ class OddsProvider extends ChangeNotifier {
       // Check if odds already exist in database
       Odds? existingOdds = await _dbService.getOddsByMatchId(match.id);
 
-      // If odds exist and are recent (less than 24 hours old), use them
+      // If odds exist and are recent (less than 2 hours old), use them
       if (existingOdds != null &&
-          DateTime.now().difference(existingOdds.lastUpdated).inHours < 24) {
+          DateTime.now().difference(existingOdds.lastUpdated).inHours < 2) {
         _oddsCache[match.id] = existingOdds;
         _isCalculating = false;
         notifyListeners();
         return existingOdds;
       }
 
-      // Calculate new odds
-      final odds = await _oddsService.calculateOdds(
+      // Use the new fallback system: Try API first, then calculate
+      final odds = await _oddsService.getOddsWithFallback(
         matchId: match.id,
-        homeTeamId: match.homeTeam.id,
-        awayTeamId: match.awayTeam.id,
+        match: match,
         homeTeamRecentMatches: homeTeamRecentMatches,
         awayTeamRecentMatches: awayTeamRecentMatches,
         headToHeadMatches: headToHeadMatches,
@@ -99,6 +98,7 @@ class OddsProvider extends ChangeNotifier {
   }
 
   String getOddsQuality(Odds odds) {
+    if (odds.source == 'odds_api') return 'Real Odds (The Odds API)';
     if (odds.source == 'api') return 'Official';
 
     // If we have enough data, quality is good
@@ -109,5 +109,10 @@ class OddsProvider extends ChangeNotifier {
     }
 
     return 'Estimated';
+  }
+
+  /// Check API quota
+  Future<Map<String, dynamic>?> checkApiQuota() async {
+    return await _oddsService.checkApiQuota();
   }
 }

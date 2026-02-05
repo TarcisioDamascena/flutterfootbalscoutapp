@@ -32,12 +32,12 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     final matchProvider = context.read<MatchProvider>();
     final homeMatches = await matchProvider.fetchTeamMatches(
       teamId: widget.match.homeTeam.id,
-      season: 2024,
+      season: 2025,
       last: 5,
     );
     final awayMatches = await matchProvider.fetchTeamMatches(
       teamId: widget.match.awayTeam.id,
-      season: 2024,
+      season: 2025,
       last: 5,
     );
 
@@ -48,7 +48,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       last: 5,
     );
 
-    // Calculate odds
+    // Calculate odds (will use The Odds API first, then fallback)
     final oddsProvider = context.read<OddsProvider>();
     final odds = await oddsProvider.calculateMatchOdds(
       match: widget.match,
@@ -248,10 +248,30 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              Text(
-                'Source: ${_odds!.source.toUpperCase()}',
-                style: Theme.of(context).textTheme.bodySmall,
-                textAlign: TextAlign.center,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    _odds!.source == 'odds_api'
+                        ? Icons.verified
+                        : Icons.calculate,
+                    size: 16,
+                    color: _odds!.source == 'odds_api'
+                        ? Colors.green
+                        : Colors.orange,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    _getOddsSourceText(_odds!.source),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: _odds!.source == 'odds_api'
+                          ? Colors.green
+                          : Colors.orange,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ] else
               const Center(child: Text('Unable to calculate odds')),
@@ -333,5 +353,18 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         ],
       ),
     );
+  }
+
+  String _getOddsSourceText(String source) {
+    switch (source) {
+      case 'odds_api':
+        return 'Real Bookmaker Odds (The Odds API)';
+      case 'calculated':
+        return 'Calculated from Match Statistics';
+      case 'api':
+        return 'Official API Odds';
+      default:
+        return source.toUpperCase();
+    }
   }
 }
