@@ -1,25 +1,35 @@
 class ApiConstants {
   // Base URLs
-  static const String apiFootballBaseUrl = 'https://v3.football.api-sports.io/';
-  static const String backendUrl =
-      "BACKEND_URL_HERE"; // Replace with backend URL
+  static const String footballDataBaseUrl = 'https://api.football-data.org/v4';
 
-  // API football endpoints
-  static const String leaguesEndpoint = 'leagues';
-  static const String teamsEndpoint = 'teams';
-  static const String fixturesEndpoint = 'fixtures';
-  static const String standingsEndpoint = 'standings';
-  static const String h2hEndpoint = 'fixtures/headtohead/';
-  static const String statisticsEndpoint = 'fixtures/statistics/';
-  static const String playersEndpoint = 'players';
+  // Football-Data.org endpoints
+  static const String competitionsEndpoint = '/competitions';
+  static const String teamsEndpoint = '/teams';
+  static const String matchesEndpoint = '/matches';
+  static const String standingsEndpoint = '/standings';
 
-  // API Keys
-  static const String apiFootballKey = 'ee6779935d2cc11ef9113199d1313e02';
+  // API Key - Football-Data.org
+  static const String footballDataApiKey = '34143df3a2b24ba5b74161d7f65099f0';
 
-  // Request Headers
-  static Map<String, String> get apiFootballHeaders => {
-    'x-rapidapi-key': apiFootballKey,
-    'x-apisports-host': 'v3.football.api-sports.io',
+  // Request headers for Football-Data.org
+  static Map<String, String> get footballDataHeaders => {
+    'X-Auth-Token': footballDataApiKey,
+  };
+
+  // Competition codes
+  static const Map<String, String> competitionCodes = {
+    'World Cup': 'WC',
+    'Champions League': 'CL',
+    'Bundesliga': 'BL1',
+    'Eredivisie': 'DED',
+    'Brasileirão Série A': 'BSA',
+    'La Liga': 'PD',
+    'Ligue 1': 'FL1',
+    'Championship': 'ELC',
+    'Primeira Liga': 'PPL',
+    'Euro Championship': 'EC',
+    'Serie A': 'SA',
+    'Premier League': 'PL',
   };
 
   // Pagination

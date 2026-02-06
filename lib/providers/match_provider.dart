@@ -18,24 +18,57 @@ class MatchProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<void> fetchFixtures({
-    required int leagueId,
-    required int season,
+  Future<void> fetchMatches({
+    required String competitionCode,
     String? status,
-    DateTime? from,
-    DateTime? to,
+    DateTime? dateFrom,
+    DateTime? dateTo,
   }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      _matches = await _apiService.fetchFixtures(
-        leagueId: leagueId,
-        season: season,
+      _matches = await _apiService.fetchMatches(
+        competitionCode: competitionCode,
         status: status,
-        from: from,
-        to: to,
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+      );
+
+      // Save to database
+      for (var match in _matches) {
+        await _dbService.insertMatch(match);
+      }
+
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+      // Try to load from database if API fails
+      final cachedMatches = await _dbService.getMatchesByCompetition(
+        competitionCode,
+      );
+      _matches = cachedMatches.map((m) => Match.fromJson(m)).toList();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchAllMatches({
+    String? status,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _matches = await _apiService.fetchAllMatches(
+        status: status,
+        dateFrom: dateFrom,
+        dateTo: dateTo,
       );
 
       // Save to database
@@ -54,7 +87,8 @@ class MatchProvider extends ChangeNotifier {
 
   Future<void> fetchLiveMatches() async {
     try {
-      _liveMatches = await _apiService.fetchLiveMatches();
+      // Football-Data.org uses status=IN_PLAY for live matches
+      _liveMatches = await _apiService.fetchAllMatches(status: 'IN_PLAY');
       notifyListeners();
     } catch (e) {
       _error = e.toString();
@@ -65,13 +99,13 @@ class MatchProvider extends ChangeNotifier {
   Future<List<Match>> fetchHeadToHead({
     required int team1Id,
     required int team2Id,
-    int? last,
+    int limit = 10,
   }) async {
     try {
       return await _apiService.fetchHeadToHead(
         team1Id: team1Id,
         team2Id: team2Id,
-        last: last,
+        limit: limit,
       );
     } catch (e) {
       _error = e.toString();
@@ -82,29 +116,19 @@ class MatchProvider extends ChangeNotifier {
 
   Future<List<Match>> fetchTeamMatches({
     required int teamId,
-    required int season,
-    int? last,
+    String? status,
+    int? limit,
   }) async {
     try {
       return await _apiService.fetchTeamMatches(
         teamId: teamId,
-        season: season,
-        last: last,
+        status: status,
+        limit: limit,
       );
     } catch (e) {
       _error = e.toString();
       notifyListeners();
       return [];
-    }
-  }
-
-  Future<Map<String, dynamic>> fetchMatchStatistics(int fixtureId) async {
-    try {
-      return await _apiService.fetchMatchStatistics(fixtureId);
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      return {};
     }
   }
 

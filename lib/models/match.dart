@@ -2,57 +2,57 @@ import 'team.dart';
 
 class Match {
   final int id;
-  final DateTime date;
+  final DateTime utcDate;
   final String status;
+  final int? matchday;
+  final String stage;
   final Team homeTeam;
   final Team awayTeam;
   final int? homeScore;
   final int? awayScore;
+  final String? winner; // HOME_TEAM, AWAY_TEAM, DRAW
   final String? venue;
   final String? referee;
-  final int? leagueId;
-  final String? leagueName;
-  final int? round;
+  final Map<String, dynamic>? competition;
 
   Match({
     required this.id,
-    required this.date,
+    required this.utcDate,
     required this.status,
+    this.matchday,
+    required this.stage,
     required this.homeTeam,
     required this.awayTeam,
     this.homeScore,
     this.awayScore,
+    this.winner,
     this.venue,
     this.referee,
-    this.leagueId,
-    this.leagueName,
-    this.round,
+    this.competition,
   });
 
-  // Factory constructor to create Match from JSON
+  // Factory constructor to create Match from JSON (Football-Data.org format)
   factory Match.fromJson(Map<String, dynamic> json) {
+    final scoreData = json['score'];
+
     return Match(
-      id: json['fixture']?['id'] ?? 0,
-      date: DateTime.parse(
-        json['fixture']?['date'] ?? DateTime.now().toIso8601String(),
+      id: json['id'] ?? 0,
+      utcDate: DateTime.parse(
+        json['utcDate'] ?? DateTime.now().toIso8601String(),
       ),
-      status: json['fixture']?['status']?['short'] ?? 'NS',
-      homeTeam: Team.fromJson(json['teams']?['home'] ?? {}),
-      awayTeam: Team.fromJson(json['teams']?['away'] ?? {}),
-      homeScore: json['goals']?['home'],
-      awayScore: json['goals']?['away'],
-      venue: json['fixture']?['venue']?['name'],
-      referee: json['fixture']?['referee'],
-      leagueId: json['league']?['id'],
-      leagueName: json['league']?['name'],
-      round: json['league']?['round'] != null
-          ? int.tryParse(
-              json['league']['round'].toString().replaceAll(
-                RegExp(r'[^0-9]'),
-                '',
-              ),
-            )
+      status: json['status'] ?? 'SCHEDULED',
+      matchday: json['matchday'],
+      stage: json['stage'] ?? 'REGULAR_SEASON',
+      homeTeam: Team.fromJson(json['homeTeam'] ?? {}),
+      awayTeam: Team.fromJson(json['awayTeam'] ?? {}),
+      homeScore: scoreData?['fullTime']?['home'],
+      awayScore: scoreData?['fullTime']?['away'],
+      winner: scoreData?['winner'],
+      venue: json['venue'],
+      referee: json['referees'] != null && (json['referees'] as List).isNotEmpty
+          ? json['referees'][0]['name']
           : null,
+      competition: json['competition'],
     );
   }
 
@@ -60,17 +60,18 @@ class Match {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'date': date.toIso8601String(),
+      'utcDate': utcDate.toIso8601String(),
       'status': status,
+      'matchday': matchday,
+      'stage': stage,
       'homeTeam': homeTeam.toJson(),
       'awayTeam': awayTeam.toJson(),
       'homeScore': homeScore,
       'awayScore': awayScore,
+      'winner': winner,
       'venue': venue,
       'referee': referee,
-      'leagueId': leagueId,
-      'leagueName': leagueName,
-      'round': round,
+      'competition': competition,
     };
   }
 
@@ -78,36 +79,48 @@ class Match {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'date': date.toIso8601String(),
+      'utc_date': utcDate.toIso8601String(),
       'status': status,
+      'matchday': matchday,
+      'stage': stage,
       'home_team_id': homeTeam.id,
       'away_team_id': awayTeam.id,
       'home_score': homeScore,
       'away_score': awayScore,
+      'winner': winner,
       'venue': venue,
       'referee': referee,
-      'league_id': leagueId,
-      'league_name': leagueName,
-      'round': round,
+      'competition_name': competition?['name'],
+      'competition_code': competition?['code'],
     };
   }
 
   // Getters for convenience
-  bool get isFinished => status == 'FT';
-  bool get isLive => status == '1H' || status == '2H' || status == 'HT';
-  bool get isScheduled => status == 'NS' || status == 'TBD';
+  bool get isFinished => status == 'FINISHED';
+  bool get isLive => status == 'IN_PLAY' || status == 'PAUSED';
+  bool get isScheduled => status == 'SCHEDULED' || status == 'TIMED';
+  bool get isPostponed => status == 'POSTPONED';
+  bool get isCancelled => status == 'CANCELLED';
+
+  // Alias for compatibility
+  DateTime get date => utcDate;
 
   String get result {
     if (homeScore == null || awayScore == null) return '-';
     return '$homeScore - $awayScore';
   }
 
-  String get winner {
-    if (homeScore == null || awayScore == null) return 'TBD';
-    if (homeScore! > awayScore!) return homeTeam.name;
-    if (awayScore! > homeScore!) return awayTeam.name;
-    return 'Draw';
+  String get winnerName {
+    if (winner == null || winner == 'DRAW') return 'Draw';
+    if (winner == 'HOME_TEAM') return homeTeam.name;
+    if (winner == 'AWAY_TEAM') return awayTeam.name;
+    return 'TBD';
   }
+
+  String? get leagueName => competition?['name'];
+  String? get leagueCode => competition?['code'];
+  int? get leagueId => competition?['id'];
+  int? get round => matchday;
 
   @override
   String toString() {

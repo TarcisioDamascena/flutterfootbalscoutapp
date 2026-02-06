@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-
-import '../../l10n/app_localizations.dart';
 import '../../models/match.dart';
+import '../../providers/match_provider.dart';
 
 class MatchDetailScreen extends StatefulWidget {
   final Match match;
@@ -14,10 +14,35 @@ class MatchDetailScreen extends StatefulWidget {
 }
 
 class _MatchDetailScreenState extends State<MatchDetailScreen> {
+  List<Match> _h2hMatches = [];
+  bool _isLoadingH2H = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHeadToHead();
+  }
+
+  Future<void> _loadHeadToHead() async {
+    setState(() => _isLoadingH2H = true);
+
+    final matchProvider = context.read<MatchProvider>();
+    final h2hMatches = await matchProvider.fetchHeadToHead(
+      team1Id: widget.match.homeTeam.id,
+      team2Id: widget.match.awayTeam.id,
+      limit: 5,
+    );
+
+    setState(() {
+      _h2hMatches = h2hMatches;
+      _isLoadingH2H = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(context.l10n.matchDetails)),
+      appBar: AppBar(title: const Text('Match Details')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -26,6 +51,8 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
             _buildMatchHeader(),
             const SizedBox(height: 24),
             _buildMatchInfo(),
+            const SizedBox(height: 24),
+            _buildHeadToHead(),
           ],
         ),
       ),
@@ -46,9 +73,9 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                 Expanded(
                   child: Column(
                     children: [
-                      if (widget.match.homeTeam.logo != null)
+                      if (widget.match.homeTeam.crest != null)
                         Image.network(
-                          widget.match.homeTeam.logo!,
+                          widget.match.homeTeam.crest!,
                           width: 60,
                           height: 60,
                           errorBuilder: (context, error, stackTrace) =>
@@ -58,7 +85,8 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                         const Icon(Icons.shield, size: 60),
                       const SizedBox(height: 8),
                       Text(
-                        widget.match.homeTeam.name,
+                        widget.match.homeTeam.shortName ??
+                            widget.match.homeTeam.name,
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
@@ -94,9 +122,9 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                               color: Colors.red,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Text(
-                              context.l10n.live,
-                              style: const TextStyle(
+                            child: const Text(
+                              'LIVE',
+                              style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -106,7 +134,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                       )
                     else
                       Text(
-                        context.l10n.vs,
+                        'VS',
                         style: Theme.of(context).textTheme.displaySmall
                             ?.copyWith(
                               fontWeight: FontWeight.bold,
@@ -118,9 +146,9 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                 Expanded(
                   child: Column(
                     children: [
-                      if (widget.match.awayTeam.logo != null)
+                      if (widget.match.awayTeam.crest != null)
                         Image.network(
-                          widget.match.awayTeam.logo!,
+                          widget.match.awayTeam.crest!,
                           width: 60,
                           height: 60,
                           errorBuilder: (context, error, stackTrace) =>
@@ -130,7 +158,8 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                         const Icon(Icons.shield, size: 60),
                       const SizedBox(height: 8),
                       Text(
-                        widget.match.awayTeam.name,
+                        widget.match.awayTeam.shortName ??
+                            widget.match.awayTeam.name,
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
@@ -141,7 +170,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              dateFormat.format(widget.match.date),
+              dateFormat.format(widget.match.utcDate),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             if (widget.match.venue != null) ...[
@@ -172,16 +201,70 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              context.l10n.matchInformation,
+              'Match Information',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
-            _buildInfoRow(context.l10n.league, widget.match.leagueName ?? context.l10n.na),
-            if (widget.match.round != null)
-              _buildInfoRow(context.l10n.round, widget.match.round.toString()),
-            _buildInfoRow(context.l10n.status, widget.match.status),
+            if (widget.match.leagueName != null)
+              _buildInfoRow('Competition', widget.match.leagueName!),
+            if (widget.match.matchday != null)
+              _buildInfoRow('Matchday', widget.match.matchday.toString()),
+            _buildInfoRow('Status', _getStatusText(widget.match.status)),
+            _buildInfoRow('Stage', _formatStage(widget.match.stage)),
             if (widget.match.referee != null)
-              _buildInfoRow(context.l10n.referee, widget.match.referee!),
+              _buildInfoRow('Referee', widget.match.referee!),
+            if (widget.match.isFinished && widget.match.winner != null)
+              _buildInfoRow('Winner', widget.match.winnerName),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeadToHead() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Head to Head', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            if (_isLoadingH2H)
+              const Center(child: CircularProgressIndicator())
+            else if (_h2hMatches.isEmpty)
+              const Center(child: Text('No previous matches found'))
+            else
+              Column(
+                children: _h2hMatches.map((match) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            match.homeTeam.shortName ?? match.homeTeam.name,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                        Text(
+                          match.result,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        Expanded(
+                          child: Text(
+                            match.awayTeam.shortName ?? match.awayTeam.name,
+                            textAlign: TextAlign.right,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
           ],
         ),
       ),
@@ -209,5 +292,40 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         ],
       ),
     );
+  }
+
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'SCHEDULED':
+      case 'TIMED':
+        return 'Scheduled';
+      case 'IN_PLAY':
+        return 'In Play';
+      case 'PAUSED':
+        return 'Half Time';
+      case 'FINISHED':
+        return 'Finished';
+      case 'POSTPONED':
+        return 'Postponed';
+      case 'CANCELLED':
+        return 'Cancelled';
+      case 'SUSPENDED':
+        return 'Suspended';
+      default:
+        return status;
+    }
+  }
+
+  String _formatStage(String stage) {
+    return stage
+        .replaceAll('_', ' ')
+        .toLowerCase()
+        .split(' ')
+        .map((word) {
+          return word.isNotEmpty
+              ? word[0].toUpperCase() + word.substring(1)
+              : '';
+        })
+        .join(' ');
   }
 }

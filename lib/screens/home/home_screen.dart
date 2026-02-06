@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../l10n/app_localizations.dart';
+import '../../localization/app_localizations.dart';
 import '../favorites/favorites_screen.dart';
 import '../match/match_list_screen.dart';
 import '../team/team_list_screen.dart';

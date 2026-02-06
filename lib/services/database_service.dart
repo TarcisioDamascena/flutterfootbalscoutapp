@@ -24,35 +24,40 @@ class DatabaseService {
   }
 
   Future<void> _createDatabase(Database db, int version) async {
-    // Teams table
+    // Teams table (updated for Football-Data.org)
     await db.execute('''
       CREATE TABLE teams (
         id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
-        logo TEXT,
-        country TEXT,
+        short_name TEXT,
+        tla TEXT,
+        crest TEXT,
+        address TEXT,
+        website TEXT,
         founded INTEGER,
+        club_colors TEXT,
         venue TEXT,
-        venue_capacity INTEGER,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     ''');
 
-    // Matches table
+    // Matches table (updated for Football-Data.org)
     await db.execute('''
       CREATE TABLE matches (
         id INTEGER PRIMARY KEY,
-        date TEXT NOT NULL,
+        utc_date TEXT NOT NULL,
         status TEXT NOT NULL,
+        matchday INTEGER,
+        stage TEXT,
         home_team_id INTEGER NOT NULL,
         away_team_id INTEGER NOT NULL,
         home_score INTEGER,
         away_score INTEGER,
+        winner TEXT,
         venue TEXT,
         referee TEXT,
-        league_id INTEGER,
-        league_name TEXT,
-        round INTEGER,
+        competition_name TEXT,
+        competition_code TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (home_team_id) REFERENCES teams (id),
         FOREIGN KEY (away_team_id) REFERENCES teams (id)
@@ -69,8 +74,11 @@ class DatabaseService {
     ''');
 
     // Create indexes
-    await db.execute('CREATE INDEX idx_matches_date ON matches(date)');
+    await db.execute('CREATE INDEX idx_matches_date ON matches(utc_date)');
     await db.execute('CREATE INDEX idx_matches_status ON matches(status)');
+    await db.execute(
+      'CREATE INDEX idx_matches_competition ON matches(competition_code)',
+    );
   }
 
   // Team operations
@@ -115,6 +123,7 @@ class DatabaseService {
 
   Future<List<Map<String, dynamic>>> getMatches({
     String? status,
+    String? competitionCode,
     DateTime? from,
     DateTime? to,
   }) async {
@@ -122,22 +131,44 @@ class DatabaseService {
     String whereClause = '';
     List<dynamic> whereArgs = [];
 
+    List<String> conditions = [];
+
     if (status != null) {
-      whereClause = 'status = ?';
+      conditions.add('status = ?');
       whereArgs.add(status);
     }
 
+    if (competitionCode != null) {
+      conditions.add('competition_code = ?');
+      whereArgs.add(competitionCode);
+    }
+
     if (from != null && to != null) {
-      if (whereClause.isNotEmpty) whereClause += ' AND ';
-      whereClause += 'date BETWEEN ? AND ?';
+      conditions.add('utc_date BETWEEN ? AND ?');
       whereArgs.addAll([from.toIso8601String(), to.toIso8601String()]);
+    }
+
+    if (conditions.isNotEmpty) {
+      whereClause = conditions.join(' AND ');
     }
 
     return await db.query(
       'matches',
       where: whereClause.isEmpty ? null : whereClause,
       whereArgs: whereArgs.isEmpty ? null : whereArgs,
-      orderBy: 'date DESC',
+      orderBy: 'utc_date DESC',
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getMatchesByCompetition(
+    String competitionCode,
+  ) async {
+    final db = await database;
+    return await db.query(
+      'matches',
+      where: 'competition_code = ?',
+      whereArgs: [competitionCode],
+      orderBy: 'utc_date DESC',
     );
   }
 
@@ -180,5 +211,12 @@ class DatabaseService {
     await db.delete('teams');
     await db.delete('matches');
     await db.delete('favorite_teams');
+  }
+
+  // Delete database (for debugging)
+  Future<void> deleteDatabase() async {
+    String path = join(await getDatabasesPath(), AppConstants.databaseName);
+    await databaseFactory.deleteDatabase(path);
+    _database = null;
   }
 }

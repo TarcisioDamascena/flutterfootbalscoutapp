@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../../core/constants/app_constants.dart';
-import '../../l10n/app_localizations.dart';
 import '../../providers/team_provider.dart';
-import '../../widgets/options_menu_button.dart';
+import '../../core/constants/app_constants.dart';
 import '../../widgets/team_card.dart';
 import 'team_detail_screen.dart';
 
@@ -16,29 +13,22 @@ class TeamListScreen extends StatefulWidget {
 }
 
 class _TeamListScreenState extends State<TeamListScreen> {
-  String _selectedLeague = AppConstants.defaultLeague;
-  late int _selectedSeason;
+  String _selectedCompetition = AppConstants.defaultCompetition;
   String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    _selectedSeason = _currentSeason();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadTeams();
     });
   }
 
-  int _currentSeason() {
-    final now = DateTime.now();
-    return now.month >= 7 ? now.year : now.year - 1;
-  }
-
   Future<void> _loadTeams() async {
-    final leagueId = AppConstants.leagueIds[_selectedLeague] ?? 39;
+    final competitionCode =
+        AppConstants.competitionCodes[_selectedCompetition] ?? 'PL';
     await context.read<TeamProvider>().fetchTeams(
-      leagueId: leagueId,
-      season: _selectedSeason,
+      competitionCode: competitionCode,
     );
     await context.read<TeamProvider>().loadFavoriteTeams();
   }
@@ -47,21 +37,22 @@ class _TeamListScreenState extends State<TeamListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(context.l10n.teams),
+        title: const Text('Teams'),
         actions: [
-          const OptionsMenuButton(),
           PopupMenuButton<String>(
             icon: const Icon(Icons.filter_list),
             onSelected: (value) {
               setState(() {
-                _selectedLeague = value;
-                _selectedSeason = _currentSeason();
+                _selectedCompetition = value;
               });
               _loadTeams();
             },
             itemBuilder: (context) {
-              return AppConstants.leagueIds.keys.map((league) {
-                return PopupMenuItem<String>(value: league, child: Text(league));
+              return AppConstants.competitionCodes.keys.map((competition) {
+                return PopupMenuItem<String>(
+                  value: competition,
+                  child: Text(competition),
+                );
               }).toList();
             },
           ),
@@ -69,16 +60,16 @@ class _TeamListScreenState extends State<TeamListScreen> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(8.0),
             child: TextField(
               onChanged: (value) {
                 setState(() {
                   _searchQuery = value.toLowerCase();
                 });
               },
-              decoration: InputDecoration(
-                hintText: context.l10n.searchTeams,
-                prefixIcon: const Icon(Icons.search),
+              decoration: const InputDecoration(
+                hintText: 'Search teams...',
+                prefixIcon: Icon(Icons.search),
               ),
             ),
           ),
@@ -97,11 +88,16 @@ class _TeamListScreenState extends State<TeamListScreen> {
                 children: [
                   const Icon(Icons.error_outline, size: 64),
                   const SizedBox(height: 16),
-                  Text(context.l10n.errorLoadingTeams),
+                  Text('Error loading teams'),
                   const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(provider.error!, textAlign: TextAlign.center),
+                  ),
+                  const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _loadTeams,
-                    child: Text(context.l10n.retry),
+                    child: const Text('Retry'),
                   ),
                 ],
               ),
@@ -111,11 +107,18 @@ class _TeamListScreenState extends State<TeamListScreen> {
           final filteredTeams = _searchQuery.isEmpty
               ? provider.teams
               : provider.teams
-                    .where((team) => team.name.toLowerCase().contains(_searchQuery))
+                    .where(
+                      (team) =>
+                          team.name.toLowerCase().contains(_searchQuery) ||
+                          (team.shortName?.toLowerCase().contains(
+                                _searchQuery,
+                              ) ??
+                              false),
+                    )
                     .toList();
 
           if (filteredTeams.isEmpty) {
-            return Center(child: Text(context.l10n.noTeamsFound));
+            return const Center(child: Text('No teams found'));
           }
 
           return RefreshIndicator(
@@ -131,7 +134,9 @@ class _TeamListScreenState extends State<TeamListScreen> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => TeamDetailScreen(team: team)),
+                      MaterialPageRoute(
+                        builder: (context) => TeamDetailScreen(team: team),
+                      ),
                     );
                   },
                   onFavoriteToggle: () {

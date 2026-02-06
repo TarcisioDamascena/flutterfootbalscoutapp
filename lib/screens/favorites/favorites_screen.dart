@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../l10n/app_localizations.dart';
+import '../../localization/app_localizations.dart';
 import '../../providers/team_provider.dart';
 import '../../widgets/options_menu_button.dart';
 import '../../widgets/team_card.dart';
@@ -39,7 +39,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.favorite_border, size: 64, color: Colors.grey[400]),
+                  Icon(
+                    Icons.favorite_border,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     context.l10n.noFavoriteTeamsYet,
@@ -67,7 +71,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => TeamDetailScreen(team: team)),
+                    MaterialPageRoute(
+                      builder: (context) => TeamDetailScreen(team: team),
+                    ),
                   );
                 },
                 onFavoriteToggle: () {

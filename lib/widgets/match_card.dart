@@ -33,8 +33,8 @@ class MatchCard extends StatelessWidget {
                   Expanded(
                     child: _buildTeam(
                       context,
-                      match.homeTeam.name,
-                      match.homeTeam.logo,
+                      match.homeTeam.shortName ?? match.homeTeam.name,
+                      match.homeTeam.crest,
                       match.homeScore,
                     ),
                   ),
@@ -48,7 +48,7 @@ class MatchCard extends StatelessWidget {
                         )
                       else
                         Text(
-                          dateFormat.format(match.date),
+                          dateFormat.format(match.utcDate),
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       if (match.isLive) ...[
@@ -77,8 +77,8 @@ class MatchCard extends StatelessWidget {
                   Expanded(
                     child: _buildTeam(
                       context,
-                      match.awayTeam.name,
-                      match.awayTeam.logo,
+                      match.awayTeam.shortName ?? match.awayTeam.name,
+                      match.awayTeam.crest,
                       match.awayScore,
                     ),
                   ),
@@ -94,14 +94,14 @@ class MatchCard extends StatelessWidget {
   Widget _buildTeam(
     BuildContext context,
     String name,
-    String? logo,
+    String? crest,
     int? score,
   ) {
     return Column(
       children: [
-        if (logo != null)
+        if (crest != null)
           Image.network(
-            logo,
+            crest,
             width: 40,
             height: 40,
             errorBuilder: (context, error, stackTrace) =>

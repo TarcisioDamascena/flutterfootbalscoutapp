@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../core/constants/app_constants.dart';
 
 class AppSettingsProvider extends ChangeNotifier {
@@ -10,32 +9,52 @@ class AppSettingsProvider extends ChangeNotifier {
   ThemeMode get themeMode => _themeMode;
   Locale get locale => _locale;
 
+  /// Load settings from SharedPreferences
   Future<void> loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    final themeValue = prefs.getString(AppConstants.keyThemeMode);
-    final localeValue = prefs.getString(AppConstants.keyLocale);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final themeValue = prefs.getString(AppConstants.keyThemeMode);
+      final localeValue = prefs.getString(AppConstants.keyLocale);
 
-    _themeMode = _themeModeFromString(themeValue);
-    _locale = _localeFromString(localeValue);
-    notifyListeners();
+      _themeMode = _themeModeFromString(themeValue);
+      _locale = _localeFromString(localeValue);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading settings: $e');
+    }
   }
 
+  /// Set theme mode and save to preferences
   Future<void> setThemeMode(ThemeMode mode) async {
+    if (_themeMode == mode) return;
+
     _themeMode = mode;
     notifyListeners();
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(AppConstants.keyThemeMode, mode.name);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(AppConstants.keyThemeMode, mode.name);
+    } catch (e) {
+      debugPrint('Error saving theme mode: $e');
+    }
   }
 
+  /// Set locale and save to preferences
   Future<void> setLocale(Locale locale) async {
+    if (_locale == locale) return;
+
     _locale = locale;
     notifyListeners();
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(AppConstants.keyLocale, _localeTag(locale));
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(AppConstants.keyLocale, _localeTag(locale));
+    } catch (e) {
+      debugPrint('Error saving locale: $e');
+    }
   }
 
+  /// Convert string to ThemeMode
   ThemeMode _themeModeFromString(String? value) {
     switch (value) {
       case 'light':
@@ -47,6 +66,7 @@ class AppSettingsProvider extends ChangeNotifier {
     }
   }
 
+  /// Convert string to Locale
   Locale _localeFromString(String? value) {
     switch (value) {
       case 'pt_BR':
@@ -57,7 +77,23 @@ class AppSettingsProvider extends ChangeNotifier {
     }
   }
 
+  /// Convert Locale to string tag
   String _localeTag(Locale locale) => locale.countryCode == null
       ? locale.languageCode
       : '${locale.languageCode}_${locale.countryCode}';
+
+  /// Reset settings to defaults
+  Future<void> resetSettings() async {
+    _themeMode = ThemeMode.system;
+    _locale = const Locale('en');
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(AppConstants.keyThemeMode);
+      await prefs.remove(AppConstants.keyLocale);
+    } catch (e) {
+      debugPrint('Error resetting settings: $e');
+    }
+  }
 }

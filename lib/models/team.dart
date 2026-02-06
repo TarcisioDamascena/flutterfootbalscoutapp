@@ -1,32 +1,41 @@
 class Team {
   final int id;
   final String name;
-  final String? logo;
-  final String? country;
+  final String? shortName;
+  final String? tla; // Three Letter Abbreviation
+  final String? crest; // Team logo/crest URL
+  final String? address;
+  final String? website;
   final int? founded;
+  final String? clubColors;
   final String? venue;
-  final int? venueCapacity;
 
   Team({
     required this.id,
     required this.name,
-    this.logo,
-    this.country,
+    this.shortName,
+    this.tla,
+    this.crest,
+    this.address,
+    this.website,
     this.founded,
+    this.clubColors,
     this.venue,
-    this.venueCapacity,
   });
 
-  // Factory constructor to create Team from JSON
+  // Factory constructor to create Team from JSON (Football-Data.org format)
   factory Team.fromJson(Map<String, dynamic> json) {
     return Team(
-      id: json['id'] ?? json['team']?['id'] ?? 0,
-      name: json['name'] ?? json['team']?['name'] ?? 'Unknown',
-      logo: json['logo'] ?? json['team']?['logo'],
-      country: json['country'] ?? json['team']?['country'],
-      founded: json['founded'] ?? json['team']?['founded'],
-      venue: json['venue']?['name'],
-      venueCapacity: json['venue']?['capacity'],
+      id: json['id'] ?? 0,
+      name: json['name'] ?? 'Unknown',
+      shortName: json['shortName'],
+      tla: json['tla'],
+      crest: json['crest'],
+      address: json['address'],
+      website: json['website'],
+      founded: json['founded'],
+      clubColors: json['clubColors'],
+      venue: json['venue'],
     );
   }
 
@@ -35,11 +44,14 @@ class Team {
     return {
       'id': id,
       'name': name,
-      'logo': logo,
-      'country': country,
+      'shortName': shortName,
+      'tla': tla,
+      'crest': crest,
+      'address': address,
+      'website': website,
       'founded': founded,
+      'clubColors': clubColors,
       'venue': venue,
-      'venueCapacity': venueCapacity,
     };
   }
 
@@ -48,11 +60,14 @@ class Team {
     return {
       'id': id,
       'name': name,
-      'logo': logo,
-      'country': country,
+      'short_name': shortName,
+      'tla': tla,
+      'crest': crest,
+      'address': address,
+      'website': website,
       'founded': founded,
+      'club_colors': clubColors,
       'venue': venue,
-      'venue_capacity': venueCapacity,
     };
   }
 
@@ -61,16 +76,30 @@ class Team {
     return Team(
       id: map['id'],
       name: map['name'],
-      logo: map['logo'],
-      country: map['country'],
+      shortName: map['short_name'],
+      tla: map['tla'],
+      crest: map['crest'],
+      address: map['address'],
+      website: map['website'],
       founded: map['founded'],
+      clubColors: map['club_colors'],
       venue: map['venue'],
-      venueCapacity: map['venue_capacity'],
     );
+  }
+
+  // Helper getter for logo (alias for crest)
+  String? get logo => crest;
+
+  // Helper getter for country (can be extracted from address if needed)
+  String? get country {
+    if (address != null && address!.contains(',')) {
+      return address!.split(',').last.trim();
+    }
+    return null;
   }
 
   @override
   String toString() {
-    return 'Team{id: $id, name: $name, country: $country}';
+    return 'Team{id: $id, name: $name, tla: $tla}';
   }
 }

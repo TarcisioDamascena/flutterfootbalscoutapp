@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../../core/constants/app_constants.dart';
-import '../../l10n/app_localizations.dart';
 import '../../providers/match_provider.dart';
+import '../../core/constants/app_constants.dart';
 import '../../widgets/match_card.dart';
-import '../../widgets/options_menu_button.dart';
 import 'match_detail_screen.dart';
 
 class MatchListScreen extends StatefulWidget {
@@ -16,28 +13,21 @@ class MatchListScreen extends StatefulWidget {
 }
 
 class _MatchListScreenState extends State<MatchListScreen> {
-  String _selectedLeague = AppConstants.defaultLeague;
-  late int _selectedSeason;
+  String _selectedCompetition = AppConstants.defaultCompetition;
 
   @override
   void initState() {
     super.initState();
-    _selectedSeason = _currentSeason();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadMatches();
     });
   }
 
-  int _currentSeason() {
-    final now = DateTime.now();
-    return now.month >= 7 ? now.year : now.year - 1;
-  }
-
   Future<void> _loadMatches() async {
-    final leagueId = AppConstants.leagueIds[_selectedLeague] ?? 39;
-    await context.read<MatchProvider>().fetchFixtures(
-      leagueId: leagueId,
-      season: _selectedSeason,
+    final competitionCode =
+        AppConstants.competitionCodes[_selectedCompetition] ?? 'PL';
+    await context.read<MatchProvider>().fetchMatches(
+      competitionCode: competitionCode,
     );
   }
 
@@ -45,21 +35,22 @@ class _MatchListScreenState extends State<MatchListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(context.l10n.matches),
+        title: const Text('Matches'),
         actions: [
-          const OptionsMenuButton(),
           PopupMenuButton<String>(
             icon: const Icon(Icons.filter_list),
             onSelected: (value) {
               setState(() {
-                _selectedLeague = value;
-                _selectedSeason = _currentSeason();
+                _selectedCompetition = value;
               });
               _loadMatches();
             },
             itemBuilder: (context) {
-              return AppConstants.leagueIds.keys.map((league) {
-                return PopupMenuItem<String>(value: league, child: Text(league));
+              return AppConstants.competitionCodes.keys.map((competition) {
+                return PopupMenuItem<String>(
+                  value: competition,
+                  child: Text(competition),
+                );
               }).toList();
             },
           ),
@@ -79,7 +70,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                   Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
                   Text(
-                    context.l10n.errorLoadingMatches,
+                    'Error loading matches',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
@@ -95,7 +86,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                   ElevatedButton.icon(
                     onPressed: _loadMatches,
                     icon: const Icon(Icons.refresh),
-                    label: Text(context.l10n.retry),
+                    label: const Text('Retry'),
                   ),
                 ],
               ),
@@ -110,12 +101,12 @@ class _MatchListScreenState extends State<MatchListScreen> {
                   Icon(Icons.sports_soccer, size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
                   Text(
-                    context.l10n.noMatchesFound,
+                    'No matches found',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    context.l10n.tryDifferentLeague,
+                    'Try selecting a different competition',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
@@ -148,6 +139,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          // Show live matches
           showModalBottomSheet(
             context: context,
             builder: (context) => const LiveMatchesSheet(),
@@ -185,7 +177,10 @@ class _LiveMatchesSheetState extends State<LiveMatchesSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(context.l10n.liveMatches, style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                'Live Matches',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               IconButton(
                 onPressed: () {
                   context.read<MatchProvider>().fetchLiveMatches();
@@ -199,7 +194,9 @@ class _LiveMatchesSheetState extends State<LiveMatchesSheet> {
             child: Consumer<MatchProvider>(
               builder: (context, provider, child) {
                 if (provider.liveMatches.isEmpty) {
-                  return Center(child: Text(context.l10n.noMatchesFound));
+                  return const Center(
+                    child: Text('No live matches at the moment'),
+                  );
                 }
 
                 return ListView.builder(
@@ -213,7 +210,8 @@ class _LiveMatchesSheetState extends State<LiveMatchesSheet> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => MatchDetailScreen(match: match),
+                            builder: (context) =>
+                                MatchDetailScreen(match: match),
                           ),
                         );
                       },

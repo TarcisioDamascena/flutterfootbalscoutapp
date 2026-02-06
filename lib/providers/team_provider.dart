@@ -22,13 +22,13 @@ class TeamProvider extends ChangeNotifier {
     return _teams.where((team) => _favoriteTeamIds.contains(team.id)).toList();
   }
 
-  Future<void> fetchTeams({required int leagueId, required int season}) async {
+  Future<void> fetchTeams({required String competitionCode}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      _teams = await _apiService.fetchTeams(leagueId: leagueId, season: season);
+      _teams = await _apiService.fetchTeams(competitionCode: competitionCode);
 
       // Save to database
       for (var team in _teams) {

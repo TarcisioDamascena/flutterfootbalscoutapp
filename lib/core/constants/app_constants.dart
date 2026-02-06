@@ -1,35 +1,38 @@
 class AppConstants {
-  // App information
-  static const String appName = "Football Scout";
-  static const String appVersion = "1.0.0";
+  // App Info
+  static const String appName = 'Football Scout';
+  static const String appVersion = '1.0.0';
 
   // Database
-  static const String databaseName = "football_scout.db";
+  static const String databaseName = 'football_scout.db';
   static const int databaseVersion = 1;
 
   // Shared Preferences Keys
   static const String keyThemeMode = 'theme_mode';
+  static const String keyLocale = 'locale';
   static const String keyFavoriteTeams = 'favorite_teams';
   static const String keySelectedLeague = 'selected_league';
   static const String keyLastSync = 'last_sync';
-  static const String keyLocale = 'locale';
 
-  // League IDs (API-Football)
-  static const Map<String, int> leagueIds = {
-    'Premier League': 39,
-    'La Liga': 140,
-    'Serie A': 135,
-    'Bundesliga': 78,
-    'Ligue 1': 61,
-    'Champions League': 2,
-    'Europa League': 3,
-    'World Cup': 1,
-    'Brasileirão Serie A': 71,
+  // Competition Codes (Football-Data.org Free Tier)
+  static const Map<String, String> competitionCodes = {
+    'Premier League': 'PL',
+    'La Liga': 'PD',
+    'Serie A': 'SA',
+    'Bundesliga': 'BL1',
+    'Ligue 1': 'FL1',
+    'Champions League': 'CL',
+    'Eredivisie': 'DED',
+    'Championship': 'ELC',
+    'Primeira Liga': 'PPL',
+    'Brasileirão Série A': 'BSA',
+    'World Cup': 'WC',
+    'Euro Championship': 'EC',
   };
 
   // Default Settings
-  static const String defaultLeague = 'Premier League';
-  static const int defaultSeason = 2025;
+  static const String defaultCompetition = 'Premier League';
+  static const int defaultSeason = 2024;
 
   // UI Constants
   static const double defaultPadding = 16.0;

@@ -18,9 +18,9 @@ class TeamDetailScreen extends StatelessWidget {
             Center(
               child: Column(
                 children: [
-                  if (team.logo != null)
+                  if (team.crest != null)
                     Image.network(
-                      team.logo!,
+                      team.crest!,
                       width: 120,
                       height: 120,
                       errorBuilder: (context, error, stackTrace) =>
@@ -34,6 +34,16 @@ class TeamDetailScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.headlineMedium,
                     textAlign: TextAlign.center,
                   ),
+                  if (team.shortName != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      team.shortName!,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -49,22 +59,21 @@ class TeamDetailScreen extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 16),
-                    if (team.country != null)
-                      _buildInfoRow(context, 'Country', team.country!),
+                    if (team.tla != null)
+                      _buildInfoRow(context, 'Abbreviation', team.tla!),
                     if (team.founded != null)
                       _buildInfoRow(
                         context,
                         'Founded',
                         team.founded.toString(),
                       ),
+                    if (team.clubColors != null)
+                      _buildInfoRow(context, 'Colors', team.clubColors!),
                     if (team.venue != null)
                       _buildInfoRow(context, 'Stadium', team.venue!),
-                    if (team.venueCapacity != null)
-                      _buildInfoRow(
-                        context,
-                        'Capacity',
-                        team.venueCapacity.toString(),
-                      ),
+                    if (team.address != null)
+                      _buildInfoRow(context, 'Address', team.address!),
+                    if (team.website != null) _buildWebsiteRow(context),
                   ],
                 ),
               ),
@@ -80,6 +89,7 @@ class TeamDetailScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
@@ -87,11 +97,53 @@ class TeamDetailScreen extends StatelessWidget {
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
           ),
+          const SizedBox(width: 16),
+          Flexible(
+            child: Text(
+              value,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWebsiteRow(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(
-            value,
+            'Website',
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+          ),
+          const SizedBox(width: 16),
+          Flexible(
+            child: GestureDetector(
+              onTap: () {
+                // You can add url_launcher package to open the website
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(team.website!)));
+              },
+              child: Text(
+                team.website!,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).primaryColor,
+                  decoration: TextDecoration.underline,
+                ),
+                textAlign: TextAlign.right,
+              ),
+            ),
           ),
         ],
       ),

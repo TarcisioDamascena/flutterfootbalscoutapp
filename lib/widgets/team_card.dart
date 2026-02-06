@@ -26,9 +26,9 @@ class TeamCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              if (team.logo != null)
+              if (team.crest != null)
                 Image.network(
-                  team.logo!,
+                  team.crest!,
                   width: 50,
                   height: 50,
                   errorBuilder: (context, error, stackTrace) =>
@@ -45,18 +45,20 @@ class TeamCard extends StatelessWidget {
                       team.name,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
-                    if (team.country != null) ...[
+                    if (team.shortName != null) ...[
                       const SizedBox(height: 4),
                       Text(
-                        team.country!,
+                        team.shortName!,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
-                    if (team.founded != null) ...[
+                    if (team.tla != null) ...[
                       const SizedBox(height: 2),
                       Text(
-                        'Founded: ${team.founded}',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        team.tla!,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey[600],
+                        ),
                       ),
                     ],
                   ],
