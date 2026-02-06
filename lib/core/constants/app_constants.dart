@@ -12,6 +12,7 @@ class AppConstants {
   static const String keyFavoriteTeams = 'favorite_teams';
   static const String keySelectedLeague = 'selected_league';
   static const String keyLastSync = 'last_sync';
+  static const String keyLocale = 'locale';
 
   // League IDs (API-Football)
   static const Map<String, int> leagueIds = {
@@ -28,7 +29,7 @@ class AppConstants {
 
   // Default Settings
   static const String defaultLeague = 'Premier League';
-  static const int defaultSeason = 2024;
+  static const int defaultSeason = 2025;
 
   // UI Constants
   static const double defaultPadding = 16.0;

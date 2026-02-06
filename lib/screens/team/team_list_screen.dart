@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/team_provider.dart';
+
 import '../../core/constants/app_constants.dart';
+import '../../l10n/app_localizations.dart';
+import '../../providers/team_provider.dart';
+import '../../widgets/options_menu_button.dart';
 import '../../widgets/team_card.dart';
 import 'team_detail_screen.dart';
 
@@ -14,15 +17,21 @@ class TeamListScreen extends StatefulWidget {
 
 class _TeamListScreenState extends State<TeamListScreen> {
   String _selectedLeague = AppConstants.defaultLeague;
-  int _selectedSeason = AppConstants.defaultSeason;
+  late int _selectedSeason;
   String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
+    _selectedSeason = _currentSeason();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadTeams();
     });
+  }
+
+  int _currentSeason() {
+    final now = DateTime.now();
+    return now.month >= 7 ? now.year : now.year - 1;
   }
 
   Future<void> _loadTeams() async {
@@ -38,22 +47,21 @@ class _TeamListScreenState extends State<TeamListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Teams'),
+        title: Text(context.l10n.teams),
         actions: [
+          const OptionsMenuButton(),
           PopupMenuButton<String>(
             icon: const Icon(Icons.filter_list),
             onSelected: (value) {
               setState(() {
                 _selectedLeague = value;
+                _selectedSeason = _currentSeason();
               });
               _loadTeams();
             },
             itemBuilder: (context) {
               return AppConstants.leagueIds.keys.map((league) {
-                return PopupMenuItem<String>(
-                  value: league,
-                  child: Text(league),
-                );
+                return PopupMenuItem<String>(value: league, child: Text(league));
               }).toList();
             },
           ),
@@ -61,16 +69,16 @@ class _TeamListScreenState extends State<TeamListScreen> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(8),
             child: TextField(
               onChanged: (value) {
                 setState(() {
                   _searchQuery = value.toLowerCase();
                 });
               },
-              decoration: const InputDecoration(
-                hintText: 'Search teams...',
-                prefixIcon: Icon(Icons.search),
+              decoration: InputDecoration(
+                hintText: context.l10n.searchTeams,
+                prefixIcon: const Icon(Icons.search),
               ),
             ),
           ),
@@ -89,11 +97,11 @@ class _TeamListScreenState extends State<TeamListScreen> {
                 children: [
                   const Icon(Icons.error_outline, size: 64),
                   const SizedBox(height: 16),
-                  Text('Error loading teams'),
+                  Text(context.l10n.errorLoadingTeams),
                   const SizedBox(height: 8),
                   ElevatedButton(
                     onPressed: _loadTeams,
-                    child: const Text('Retry'),
+                    child: Text(context.l10n.retry),
                   ),
                 ],
               ),
@@ -103,13 +111,11 @@ class _TeamListScreenState extends State<TeamListScreen> {
           final filteredTeams = _searchQuery.isEmpty
               ? provider.teams
               : provider.teams
-                    .where(
-                      (team) => team.name.toLowerCase().contains(_searchQuery),
-                    )
+                    .where((team) => team.name.toLowerCase().contains(_searchQuery))
                     .toList();
 
           if (filteredTeams.isEmpty) {
-            return const Center(child: Text('No teams found'));
+            return Center(child: Text(context.l10n.noTeamsFound));
           }
 
           return RefreshIndicator(
@@ -125,9 +131,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => TeamDetailScreen(team: team),
-                      ),
+                      MaterialPageRoute(builder: (context) => TeamDetailScreen(team: team)),
                     );
                   },
                   onFavoriteToggle: () {

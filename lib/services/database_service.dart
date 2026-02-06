@@ -3,7 +3,6 @@ import 'package:path/path.dart';
 import '../core/constants/app_constants.dart';
 import '../models/team.dart';
 import '../models/match.dart';
-import '../models/odds.dart';
 
 class DatabaseService {
   static Database? _database;
@@ -60,24 +59,6 @@ class DatabaseService {
       )
     ''');
 
-    // Odds table
-    await db.execute('''
-      CREATE TABLE odds (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        match_id INTEGER NOT NULL,
-        home_win_odds REAL NOT NULL,
-        draw_odds REAL NOT NULL,
-        away_win_odds REAL NOT NULL,
-        home_win_probability REAL,
-        draw_probability REAL,
-        away_win_probability REAL,
-        source TEXT NOT NULL,
-        last_updated TEXT NOT NULL,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (match_id) REFERENCES matches (id)
-      )
-    ''');
-
     // Favorite teams table
     await db.execute('''
       CREATE TABLE favorite_teams (
@@ -90,7 +71,6 @@ class DatabaseService {
     // Create indexes
     await db.execute('CREATE INDEX idx_matches_date ON matches(date)');
     await db.execute('CREATE INDEX idx_matches_status ON matches(status)');
-    await db.execute('CREATE INDEX idx_odds_match_id ON odds(match_id)');
   }
 
   // Team operations
@@ -161,32 +141,6 @@ class DatabaseService {
     );
   }
 
-  // Odds operations
-  Future<int> insertOdds(Odds odds) async {
-    final db = await database;
-    return await db.insert(
-      'odds',
-      odds.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
-
-  Future<Odds?> getOddsByMatchId(int matchId) async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'odds',
-      where: 'match_id = ?',
-      whereArgs: [matchId],
-      orderBy: 'last_updated DESC',
-      limit: 1,
-    );
-
-    if (maps.isNotEmpty) {
-      return Odds.fromMap(maps.first);
-    }
-    return null;
-  }
-
   // Favorite teams operations
   Future<int> addFavoriteTeam(int teamId) async {
     final db = await database;
@@ -225,7 +179,6 @@ class DatabaseService {
     final db = await database;
     await db.delete('teams');
     await db.delete('matches');
-    await db.delete('odds');
     await db.delete('favorite_teams');
   }
 }

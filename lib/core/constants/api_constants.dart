@@ -9,7 +9,6 @@ class ApiConstants {
   static const String teamsEndpoint = 'teams';
   static const String fixturesEndpoint = 'fixtures';
   static const String standingsEndpoint = 'standings';
-  static const String oddsEndpoint = 'odds';
   static const String h2hEndpoint = 'fixtures/headtohead/';
   static const String statisticsEndpoint = 'fixtures/statistics/';
   static const String playersEndpoint = 'players';

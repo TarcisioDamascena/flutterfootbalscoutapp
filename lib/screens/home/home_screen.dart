@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import '../team/team_list_screen.dart';
-import '../match/match_list_screen.dart';
+
+import '../../l10n/app_localizations.dart';
 import '../favorites/favorites_screen.dart';
+import '../match/match_list_screen.dart';
+import '../team/team_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,15 +35,18 @@ class _HomeScreenState extends State<HomeScreen> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Theme.of(context).primaryColor,
         unselectedItemColor: Colors.grey,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.sports_soccer),
-            label: 'Matches',
+            icon: const Icon(Icons.sports_soccer),
+            label: context.l10n.matches,
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.shield), label: 'Teams'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: 'Favorites',
+            icon: const Icon(Icons.shield),
+            label: context.l10n.teams,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.favorite),
+            label: context.l10n.favorites,
           ),
         ],
       ),

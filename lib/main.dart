@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'core/services/service_locator.dart';
 import 'core/themes/app_theme.dart';
+import 'l10n/app_localizations.dart';
+import 'providers/app_settings_provider.dart';
 import 'providers/match_provider.dart';
-import 'providers/odds_provider.dart';
 import 'providers/team_provider.dart';
 import 'screens/home/home_screen.dart';
 
@@ -25,15 +27,29 @@ class FootballScoutApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => TeamProvider()),
         ChangeNotifierProvider(create: (_) => MatchProvider()),
-        ChangeNotifierProvider(create: (_) => OddsProvider()),
+        ChangeNotifierProvider(
+          create: (_) => AppSettingsProvider()..loadSettings(),
+        ),
       ],
-      child: MaterialApp(
-        title: 'Football Scout',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        home: const HomeScreen(),
+      child: Consumer<AppSettingsProvider>(
+        builder: (context, settings, _) {
+          return MaterialApp(
+            title: 'Football Scout',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: settings.themeMode,
+            locale: settings.locale,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: const HomeScreen(),
+          );
+        },
       ),
     );
   }

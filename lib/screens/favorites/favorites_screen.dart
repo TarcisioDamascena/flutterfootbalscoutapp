@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../../l10n/app_localizations.dart';
 import '../../providers/team_provider.dart';
+import '../../widgets/options_menu_button.dart';
 import '../../widgets/team_card.dart';
 import '../team/team_detail_screen.dart';
 
@@ -23,7 +26,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Favorite Teams')),
+      appBar: AppBar(
+        title: Text(context.l10n.favoriteTeams),
+        actions: const [OptionsMenuButton()],
+      ),
       body: Consumer<TeamProvider>(
         builder: (context, provider, child) {
           final favoriteTeams = provider.favoriteTeams;
@@ -33,19 +39,15 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.favorite_border,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
+                  Icon(Icons.favorite_border, size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
                   Text(
-                    'No favorite teams yet',
+                    context.l10n.noFavoriteTeamsYet,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Add teams to your favorites from the Teams tab',
+                    context.l10n.addFavoritesHint,
                     style: Theme.of(context).textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
@@ -65,9 +67,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => TeamDetailScreen(team: team),
-                    ),
+                    MaterialPageRoute(builder: (context) => TeamDetailScreen(team: team)),
                   );
                 },
                 onFavoriteToggle: () {
