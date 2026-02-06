@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/match_provider.dart';
+
 import '../../core/constants/app_constants.dart';
+import '../../l10n/app_localizations.dart';
+import '../../providers/match_provider.dart';
 import '../../widgets/match_card.dart';
+import '../../widgets/options_menu_button.dart';
 import 'match_detail_screen.dart';
 
 class MatchListScreen extends StatefulWidget {
@@ -14,14 +17,20 @@ class MatchListScreen extends StatefulWidget {
 
 class _MatchListScreenState extends State<MatchListScreen> {
   String _selectedLeague = AppConstants.defaultLeague;
-  int _selectedSeason = AppConstants.defaultSeason;
+  late int _selectedSeason;
 
   @override
   void initState() {
     super.initState();
+    _selectedSeason = _currentSeason();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadMatches();
     });
+  }
+
+  int _currentSeason() {
+    final now = DateTime.now();
+    return now.month >= 7 ? now.year : now.year - 1;
   }
 
   Future<void> _loadMatches() async {
@@ -36,22 +45,21 @@ class _MatchListScreenState extends State<MatchListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Matches'),
+        title: Text(context.l10n.matches),
         actions: [
+          const OptionsMenuButton(),
           PopupMenuButton<String>(
             icon: const Icon(Icons.filter_list),
             onSelected: (value) {
               setState(() {
                 _selectedLeague = value;
+                _selectedSeason = _currentSeason();
               });
               _loadMatches();
             },
             itemBuilder: (context) {
               return AppConstants.leagueIds.keys.map((league) {
-                return PopupMenuItem<String>(
-                  value: league,
-                  child: Text(league),
-                );
+                return PopupMenuItem<String>(value: league, child: Text(league));
               }).toList();
             },
           ),
@@ -71,7 +79,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                   Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
                   Text(
-                    'Error loading matches',
+                    context.l10n.errorLoadingMatches,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
@@ -87,7 +95,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                   ElevatedButton.icon(
                     onPressed: _loadMatches,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
+                    label: Text(context.l10n.retry),
                   ),
                 ],
               ),
@@ -102,12 +110,12 @@ class _MatchListScreenState extends State<MatchListScreen> {
                   Icon(Icons.sports_soccer, size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
                   Text(
-                    'No matches found',
+                    context.l10n.noMatchesFound,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Try selecting a different league',
+                    context.l10n.tryDifferentLeague,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
@@ -140,7 +148,6 @@ class _MatchListScreenState extends State<MatchListScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Show live matches
           showModalBottomSheet(
             context: context,
             builder: (context) => const LiveMatchesSheet(),
@@ -178,10 +185,7 @@ class _LiveMatchesSheetState extends State<LiveMatchesSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Live Matches',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
+              Text(context.l10n.liveMatches, style: Theme.of(context).textTheme.titleLarge),
               IconButton(
                 onPressed: () {
                   context.read<MatchProvider>().fetchLiveMatches();
@@ -195,9 +199,7 @@ class _LiveMatchesSheetState extends State<LiveMatchesSheet> {
             child: Consumer<MatchProvider>(
               builder: (context, provider, child) {
                 if (provider.liveMatches.isEmpty) {
-                  return const Center(
-                    child: Text('No live matches at the moment'),
-                  );
+                  return Center(child: Text(context.l10n.noMatchesFound));
                 }
 
                 return ListView.builder(
@@ -211,8 +213,7 @@ class _LiveMatchesSheetState extends State<LiveMatchesSheet> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                MatchDetailScreen(match: match),
+                            builder: (context) => MatchDetailScreen(match: match),
                           ),
                         );
                       },

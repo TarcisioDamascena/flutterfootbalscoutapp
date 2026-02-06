@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+
+import '../../l10n/app_localizations.dart';
 import '../../models/match.dart';
-import '../../models/odds.dart';
-import '../../providers/match_provider.dart';
-import '../../providers/odds_provider.dart';
 
 class MatchDetailScreen extends StatefulWidget {
   final Match match;
@@ -16,65 +14,16 @@ class MatchDetailScreen extends StatefulWidget {
 }
 
 class _MatchDetailScreenState extends State<MatchDetailScreen> {
-  Odds? _odds;
-  bool _isLoadingOdds = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadOddsAndData();
-  }
-
-  Future<void> _loadOddsAndData() async {
-    setState(() => _isLoadingOdds = true);
-
-    // Fetch recent matches for both teams
-    final matchProvider = context.read<MatchProvider>();
-    final homeMatches = await matchProvider.fetchTeamMatches(
-      teamId: widget.match.homeTeam.id,
-      season: 2024,
-      last: 5,
-    );
-    final awayMatches = await matchProvider.fetchTeamMatches(
-      teamId: widget.match.awayTeam.id,
-      season: 2024,
-      last: 5,
-    );
-
-    // Fetch head-to-head
-    final h2hMatches = await matchProvider.fetchHeadToHead(
-      team1Id: widget.match.homeTeam.id,
-      team2Id: widget.match.awayTeam.id,
-      last: 5,
-    );
-
-    // Calculate odds
-    final oddsProvider = context.read<OddsProvider>();
-    final odds = await oddsProvider.calculateMatchOdds(
-      match: widget.match,
-      homeTeamRecentMatches: homeMatches,
-      awayTeamRecentMatches: awayMatches,
-      headToHeadMatches: h2hMatches,
-    );
-
-    setState(() {
-      _odds = odds;
-      _isLoadingOdds = false;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Match Details')),
+      appBar: AppBar(title: Text(context.l10n.matchDetails)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildMatchHeader(),
-            const SizedBox(height: 24),
-            _buildOddsSection(),
             const SizedBox(height: 24),
             _buildMatchInfo(),
           ],
@@ -145,9 +94,9 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                               color: Colors.red,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Text(
-                              'LIVE',
-                              style: TextStyle(
+                            child: Text(
+                              context.l10n.live,
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -157,7 +106,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                       )
                     else
                       Text(
-                        'VS',
+                        context.l10n.vs,
                         style: Theme.of(context).textTheme.displaySmall
                             ?.copyWith(
                               fontWeight: FontWeight.bold,
@@ -215,79 +164,6 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     );
   }
 
-  Widget _buildOddsSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Match Odds', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-            if (_isLoadingOdds)
-              const Center(child: CircularProgressIndicator())
-            else if (_odds != null) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildOddsColumn(
-                    label: 'Home Win',
-                    odds: _odds!.homeWinOdds,
-                    probability: _odds!.homeWinProbability,
-                  ),
-                  _buildOddsColumn(
-                    label: 'Draw',
-                    odds: _odds!.drawOdds,
-                    probability: _odds!.drawProbability,
-                  ),
-                  _buildOddsColumn(
-                    label: 'Away Win',
-                    odds: _odds!.awayWinOdds,
-                    probability: _odds!.awayWinProbability,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Source: ${_odds!.source.toUpperCase()}',
-                style: Theme.of(context).textTheme.bodySmall,
-                textAlign: TextAlign.center,
-              ),
-            ] else
-              const Center(child: Text('Unable to calculate odds')),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOddsColumn({
-    required String label,
-    required double odds,
-    double? probability,
-  }) {
-    return Column(
-      children: [
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-        const SizedBox(height: 8),
-        Text(
-          odds.toStringAsFixed(2),
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).primaryColor,
-          ),
-        ),
-        if (probability != null) ...[
-          const SizedBox(height: 4),
-          Text(
-            '${probability.toStringAsFixed(1)}%',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
-      ],
-    );
-  }
-
   Widget _buildMatchInfo() {
     return Card(
       child: Padding(
@@ -296,16 +172,16 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Match Information',
+              context.l10n.matchInformation,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
-            _buildInfoRow('League', widget.match.leagueName ?? 'N/A'),
+            _buildInfoRow(context.l10n.league, widget.match.leagueName ?? context.l10n.na),
             if (widget.match.round != null)
-              _buildInfoRow('Round', widget.match.round.toString()),
-            _buildInfoRow('Status', widget.match.status),
+              _buildInfoRow(context.l10n.round, widget.match.round.toString()),
+            _buildInfoRow(context.l10n.status, widget.match.status),
             if (widget.match.referee != null)
-              _buildInfoRow('Referee', widget.match.referee!),
+              _buildInfoRow(context.l10n.referee, widget.match.referee!),
           ],
         ),
       ),
